@@ -1,0 +1,34 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Data
+data/raw/
+data/benchmark/
+
+# Models
+checkpoints/
+*.pt
+*.pth
+*.ckpt
+
+# Generated outputs
+outputs/
+
+# Hugging Face
+.cache/

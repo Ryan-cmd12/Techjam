@@ -1,0 +1,53 @@
+project:
+  name: "robust-aigc-detector"
+  seed: 42
+
+paths:
+  raw_data: "data/raw"
+  manifests: "data/manifests"
+  benchmark: "data/benchmark"
+  checkpoints: "checkpoints"
+  outputs: "outputs"
+
+datasets:
+  cifake:
+    root: "data/raw/cifake"
+
+    # We preserve CIFAKE's official test split.
+    train_dir: "train"
+    test_dir: "test"
+
+    real_dir: "REAL"
+    fake_dir: "FAKE"
+
+    # 10% of CIFAKE's official training set becomes validation.
+    validation_fraction: 0.10
+
+data:
+  image_extensions:
+    - ".jpg"
+    - ".jpeg"
+    - ".png"
+    - ".webp"
+    - ".bmp"
+
+training:
+  batch_size: 32
+  num_workers: 4
+
+  epochs: 10
+
+  learning_rate: 0.0001
+  weight_decay: 0.0001
+
+model:
+  clip_model: "openai/clip-vit-large-patch14"
+
+  freeze_backbone: true
+
+  classifier:
+    hidden_dim: 512
+    dropout: 0.2
+
+evaluation:
+  threshold: 0.5
