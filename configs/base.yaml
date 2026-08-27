@@ -13,14 +13,12 @@ datasets:
   cifake:
     root: "data/raw/cifake"
 
-    # We preserve CIFAKE's official test split.
     train_dir: "train"
     test_dir: "test"
 
     real_dir: "REAL"
     fake_dir: "FAKE"
 
-    # 10% of CIFAKE's official training set becomes validation.
     validation_fraction: 0.10
 
 data:
@@ -37,17 +35,116 @@ training:
 
   epochs: 10
 
-  learning_rate: 0.0001
+  learning_rate: 0.001
   weight_decay: 0.0001
+
+  gradient_clip_norm: 1.0
+
+  use_amp: true
 
 model:
   clip_model: "openai/clip-vit-large-patch14"
 
   freeze_backbone: true
+  normalize_embeddings: true
 
   classifier:
     hidden_dim: 512
-    dropout: 0.2
+    dropout: 0.20
+
+robust_training:
+
+  # Probability of leaving the second view clean.
+  # 0.05 means 95% of second views are corrupted.
+  clean_probability: 0.05
+
+  adapter:
+    bottleneck_dim: 256
+    dropout: 0.10
+
+  loss:
+    feature_consistency_weight: 0.15
+    prediction_consistency_weight: 0.25
 
 evaluation:
   threshold: 0.5
+  use_amp: true
+
+robustness:
+
+  conditions:
+
+    - key: "clean"
+      name: "Clean"
+      type: "clean"
+      severity: null
+
+    - key: "jpeg_90"
+      name: "JPEG 90"
+      type: "jpeg"
+      severity: 90
+
+    - key: "jpeg_70"
+      name: "JPEG 70"
+      type: "jpeg"
+      severity: 70
+
+    - key: "jpeg_50"
+      name: "JPEG 50"
+      type: "jpeg"
+      severity: 50
+
+    - key: "jpeg_30"
+      name: "JPEG 30"
+      type: "jpeg"
+      severity: 30
+
+    - key: "blur_0_5"
+      name: "Blur σ=0.5"
+      type: "blur"
+      severity: 0.5
+
+    - key: "blur_1"
+      name: "Blur σ=1.0"
+      type: "blur"
+      severity: 1.0
+
+    - key: "blur_2"
+      name: "Blur σ=2.0"
+      type: "blur"
+      severity: 2.0
+
+    - key: "resize_0_5"
+      name: "Resize ×0.5"
+      type: "resize"
+      severity: 0.5
+
+    - key: "resize_0_25"
+      name: "Resize ×0.25"
+      type: "resize"
+      severity: 0.25
+
+    - key: "noise_0_02"
+      name: "Noise σ=0.02"
+      type: "noise"
+      severity: 0.02
+
+    - key: "noise_0_05"
+      name: "Noise σ=0.05"
+      type: "noise"
+      severity: 0.05
+
+    - key: "noise_0_10"
+      name: "Noise σ=0.10"
+      type: "noise"
+      severity: 0.10
+
+    - key: "color_20"
+      name: "Color Jitter ±20%"
+      type: "color_jitter"
+      severity: 0.20
+
+    - key: "crop_80"
+      name: "Center Crop 80%"
+      type: "crop"
+      severity: 0.80

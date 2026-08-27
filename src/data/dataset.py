@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
+from typing import Callable
 
 import pandas as pd
 import torch
@@ -21,8 +22,15 @@ class AIGCImageDataset(
     def __init__(
         self,
         manifest_path: str | Path,
-        transform: Callable | None = None,
-        return_metadata: bool = True,
+
+        transform:
+            Callable | None = None,
+
+        paired_transform:
+            Callable | None = None,
+
+        return_metadata:
+            bool = True,
     ):
 
         self.manifest_path = Path(
@@ -34,6 +42,16 @@ class AIGCImageDataset(
             raise FileNotFoundError(
                 f"Manifest does not exist: "
                 f"{self.manifest_path}"
+            )
+
+        if (
+            transform is not None
+            and paired_transform is not None
+        ):
+
+            raise ValueError(
+                "Use either transform or "
+                "paired_transform, not both."
             )
 
         self.dataframe = (
@@ -73,9 +91,14 @@ class AIGCImageDataset(
             transform
         )
 
+        self.paired_transform = (
+            paired_transform
+        )
+
         self.return_metadata = (
             return_metadata
         )
+
 
     def __len__(
         self,
@@ -84,6 +107,7 @@ class AIGCImageDataset(
         return len(
             self.dataframe
         )
+
 
     def _resolve_image_path(
         self,
@@ -95,6 +119,7 @@ class AIGCImageDataset(
         )
 
         if path.is_absolute():
+
             return path
 
         return (
@@ -102,14 +127,14 @@ class AIGCImageDataset(
             / path
         )
 
+
     def __getitem__(
         self,
         index: int,
     ) -> dict[str, Any]:
 
         row = (
-            self.dataframe
-            .iloc[
+            self.dataframe.iloc[
                 index
             ]
         )
@@ -130,18 +155,10 @@ class AIGCImageDataset(
             )
         )
 
-        if self.transform is not None:
-
-            image = (
-                self.transform(
-                    image
-                )
-            )
-
-        sample: dict[str, Any] = {
-            "image":
-                image,
-
+        sample: dict[
+            str,
+            Any
+        ] = {
             "label":
                 torch.tensor(
                     float(
@@ -153,6 +170,55 @@ class AIGCImageDataset(
                         torch.float32,
                 ),
         }
+
+        if (
+            self.paired_transform
+            is not None
+        ):
+
+            paired_output = (
+                self.paired_transform(
+                    image
+                )
+            )
+
+            sample[
+                "clean_image"
+            ] = (
+                paired_output[
+                    "clean"
+                ]
+            )
+
+            sample[
+                "corrupted_image"
+            ] = (
+                paired_output[
+                    "corrupted"
+                ]
+            )
+
+            sample[
+                "corruption"
+            ] = (
+                paired_output[
+                    "corruption"
+                ]
+            )
+
+        else:
+
+            if self.transform is not None:
+
+                image = (
+                    self.transform(
+                        image
+                    )
+                )
+
+            sample[
+                "image"
+            ] = image
 
         if self.return_metadata:
 
