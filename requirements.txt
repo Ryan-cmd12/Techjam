@@ -1,6 +1,11 @@
 torch>=2.4
 torchvision>=0.19
 transformers>=4.45
+
+datasets
+huggingface-hub
+pyarrow
+
 pillow>=10.0
 numpy>=1.26
 pandas>=2.2

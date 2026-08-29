@@ -18,6 +18,7 @@ env/
 Thumbs.db
 
 # Data
+data/processed
 data/raw/
 data/benchmark/
 

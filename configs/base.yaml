@@ -12,14 +12,51 @@ paths:
 datasets:
   cifake:
     root: "data/raw/cifake"
-
     train_dir: "train"
     test_dir: "test"
-
     real_dir: "REAL"
     fake_dir: "FAKE"
-
     validation_fraction: 0.10
+  sid_set:
+
+    repo_id: "saberzl/SID_Set"
+
+    # Optional local Hugging Face repo snapshot.
+    #
+    # Expected:
+    #
+    # data/raw/sid_set/
+    # └── data/
+    #     ├── train-*.parquet
+    #     └── validation-*.parquet
+    local_root: "data/raw/sid_set"
+
+    materialized_root: "data/processed/sid_set"
+
+    train_split: "train"
+    validation_split: "validation"
+
+    # Use streaming when reading directly from Hugging Face.
+    streaming: true
+
+    # Streaming shuffle buffer.
+    shuffle_buffer_size: 10000
+
+    # Initial hackathon-sized subset.
+    #
+    # null = all available examples of each class.
+    #
+    # Start with these. We can increase them later.
+    train_max_per_class: 10000
+    validation_max_per_class: 5000
+
+    # The primary task is:
+    #
+    # 0 real
+    # 1 full synthetic
+    #
+    # Label 2 (tampered) stays out of the primary detector.
+    include_tampered_auxiliary: false
 
 data:
   image_extensions:
@@ -32,14 +69,12 @@ data:
 training:
   batch_size: 32
   num_workers: 4
-
   epochs: 10
 
   learning_rate: 0.001
   weight_decay: 0.0001
 
   gradient_clip_norm: 1.0
-
   use_amp: true
 
 model:
@@ -53,9 +88,6 @@ model:
     dropout: 0.20
 
 robust_training:
-
-  # Probability of leaving the second view clean.
-  # 0.05 means 95% of second views are corrupted.
   clean_probability: 0.05
 
   adapter:
@@ -66,12 +98,38 @@ robust_training:
     feature_consistency_weight: 0.15
     prediction_consistency_weight: 0.25
 
+forensic_fusion:
+
+  # Warm-start from the already-strong robust model.
+  warm_start_checkpoint: "checkpoints/robust_best.pt"
+
+  forensic:
+    embedding_dim: 256
+    base_channels: 32
+    dropout: 0.10
+
+  fusion:
+    projection_dim: 256
+    hidden_dim: 256
+    dropout: 0.20
+
+  training:
+    # Smaller LR for the already-trained semantic branch.
+    semantic_learning_rate: 0.0002
+
+    # Higher LR for newly initialized forensic/fusion modules.
+    new_branch_learning_rate: 0.001
+
+  loss:
+    auxiliary_branch_weight: 0.15
+    feature_consistency_weight: 0.10
+    prediction_consistency_weight: 0.20
+
 evaluation:
   threshold: 0.5
   use_amp: true
 
 robustness:
-
   conditions:
 
     - key: "clean"
@@ -148,3 +206,203 @@ robustness:
       name: "Center Crop 80%"
       type: "crop"
       severity: 0.80
+
+
+native_tiles:
+
+  tile_size: 256
+  max_tiles: 6
+  feature_map_size: 64
+
+  training_sampling: "random"
+  evaluation_sampling: "grid"
+
+  training:
+    batch_size: 16
+    epochs: 10
+
+    semantic_learning_rate: 0.0001
+    forensic_learning_rate: 0.0003
+    attention_learning_rate: 0.001
+    fusion_learning_rate: 0.0005
+
+  encoder:
+    embedding_dim: 256
+    base_channels: 32
+    dropout: 0.10
+
+  attention:
+    hidden_dim: 128
+    dropout: 0.10
+
+  fusion:
+    projection_dim: 256
+    hidden_dim: 256
+    dropout: 0.20
+
+  loss:
+    auxiliary_branch_weight: 0.10
+
+    feature_consistency_weight: 0.08
+    prediction_consistency_weight: 0.20
+
+    # Encourages attention not to collapse to one tile
+    # immediately at the start of training.
+    attention_entropy_weight: 0.005
+
+  warm_start_checkpoint:
+    "checkpoints/forensic_fusion_best.pt"
+
+
+corruption_estimator:
+
+  num_types: 7
+
+  hidden_dim: 256
+  embedding_dim: 128
+  dropout: 0.10
+
+  # 1 clean + 6 corruptions.
+  #
+  # clean_probability = 1/7 means all seven classes
+  # appear approximately equally often.
+  clean_probability: 0.142857
+
+  training:
+    batch_size: 16
+    epochs: 8
+
+    learning_rate: 0.001
+    weight_decay: 0.0001
+
+  loss:
+    type_weight: 1.0
+    severity_weight: 0.5
+
+  base_checkpoint:
+    "checkpoints/native_tile_best.pt"
+
+
+
+transformation_aware:
+
+  native_tile_checkpoint:
+    "checkpoints/native_tile_best.pt"
+
+  corruption_checkpoint:
+    "checkpoints/corruption_estimator_best.pt"
+
+  freeze_corruption_estimator: true
+
+  gate:
+    hidden_dim: 256
+    dropout: 0.10
+
+    # New adaptive path initially has only a small
+    # influence on the already-trained base detector.
+    initial_residual_scale: 0.05
+
+  training:
+    batch_size: 16
+    epochs: 8
+
+    semantic_learning_rate: 0.00005
+    forensic_learning_rate: 0.00010
+    attention_learning_rate: 0.00010
+
+    gate_learning_rate: 0.001
+    adaptive_learning_rate: 0.001
+
+  loss:
+    auxiliary_branch_weight: 0.05
+
+    feature_consistency_weight: 0.05
+    prediction_consistency_weight: 0.15
+
+    # Directly teaches the gate which branch is more
+    # reliable for each image.
+    gate_reliability_weight: 0.15
+
+    gate_target_temperature: 0.50
+
+
+
+laundering:
+
+  pipelines:
+
+    - key: "clean"
+      name: "Clean"
+      steps: []
+
+    - key: "repost_mild"
+      name: "Mild Repost"
+      steps:
+        - type: "resize"
+          severity: 0.5
+        - type: "jpeg"
+          severity: 70
+
+    - key: "repost_aggressive"
+      name: "Aggressive Repost"
+      steps:
+        - type: "crop"
+          severity: 0.80
+        - type: "resize"
+          severity: 0.5
+        - type: "jpeg"
+          severity: 50
+
+    - key: "repost_extreme"
+      name: "Extreme Repost"
+      steps:
+        - type: "crop"
+          severity: 0.80
+        - type: "resize"
+          severity: 0.25
+        - type: "jpeg"
+          severity: 30
+
+    - key: "blur_recompress"
+      name: "Blur + Resize + JPEG"
+      steps:
+        - type: "blur"
+          severity: 1.0
+        - type: "resize"
+          severity: 0.5
+        - type: "jpeg"
+          severity: 50
+
+    - key: "noise_recompress"
+      name: "Noise + JPEG"
+      steps:
+        - type: "noise"
+          severity: 0.05
+        - type: "jpeg"
+          severity: 50
+
+    - key: "filtered_repost"
+      name: "Filtered Repost"
+      steps:
+        - type: "color_jitter"
+          severity: 0.20
+        - type: "crop"
+          severity: 0.80
+        - type: "resize"
+          severity: 0.5
+        - type: "jpeg"
+          severity: 50
+
+    - key: "full_laundering"
+      name: "Full Laundering"
+      steps:
+        - type: "crop"
+          severity: 0.80
+        - type: "blur"
+          severity: 1.0
+        - type: "resize"
+          severity: 0.5
+        - type: "color_jitter"
+          severity: 0.20
+        - type: "jpeg"
+          severity: 30
