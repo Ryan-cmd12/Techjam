@@ -406,3 +406,73 @@ laundering:
           severity: 0.20
         - type: "jpeg"
           severity: 30
+
+
+calibration:
+
+  temperature:
+    max_iterations: 100
+
+  reliability:
+
+    # Don't need the entire development set initially.
+    # null = use everything.
+    max_samples: 4000
+
+    # Mild realistic transformations used to probe
+    # prediction stability.
+    probes:
+
+      - key: "clean"
+        name: "Clean"
+        type: "clean"
+        severity: null
+
+      - key: "jpeg_70"
+        name: "JPEG 70"
+        type: "jpeg"
+        severity: 70
+
+      - key: "blur_1"
+        name: "Blur σ=1"
+        type: "blur"
+        severity: 1.0
+
+      - key: "resize_0_5"
+        name: "Resize ×0.5"
+        type: "resize"
+        severity: 0.5
+
+      - key: "noise_0_05"
+        name: "Noise σ=0.05"
+        type: "noise"
+        severity: 0.05
+
+      - key: "color_20"
+        name: "Color ±20%"
+        type: "color_jitter"
+        severity: 0.20
+
+      - key: "crop_80"
+        name: "Center Crop 80%"
+        type: "crop"
+        severity: 0.80
+
+error_analysis:
+
+  # null = full held-out dataset.
+  # Start with 2000 if SID evaluation is expensive.
+  max_samples: 2000
+
+  top_k_examples: 24
+
+  confident_threshold: 0.90
+
+  branch_disagreement_threshold: 0.40
+
+  low_reliability_threshold: 0.50
+
+  contact_sheet:
+    columns: 4
+    cell_width: 300
+    cell_height: 330
