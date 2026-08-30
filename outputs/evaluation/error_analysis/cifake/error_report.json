@@ -1,0 +1,18 @@
+{
+    "num_images": 2000,
+    "num_condition_rows": 16000,
+    "clean_errors": 41,
+    "clean_false_positives": 24,
+    "clean_false_negatives": 17,
+    "confident_false_positives": 9,
+    "confident_false_negatives": 5,
+    "transformation_failures": 811,
+    "images_with_prediction_flip": 849,
+    "gate_helped_rows": 57,
+    "gate_hurt_rows": 210,
+    "net_gate_corrections": -153,
+    "mean_clean_branch_disagreement": 0.15670475904376938,
+    "mean_transformed_branch_disagreement": 0.2897854411970864,
+    "mean_clean_reliability": 0.8549053332225083,
+    "mean_max_clean_shift": 0.41777072918746855
+}

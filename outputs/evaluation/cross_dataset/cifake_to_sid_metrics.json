@@ -1,0 +1,19 @@
+{
+    "train_dataset": "cifake",
+    "test_dataset": "sid_set",
+    "unseen_generator": "flux",
+    "loss": 6.285920373916626,
+    "accuracy": 0.5745,
+    "balanced_accuracy": 0.5745,
+    "precision": 0.5402485143165856,
+    "recall": 1.0,
+    "f1": 0.701508242721852,
+    "auroc": 0.799700625,
+    "average_precision": 0.7177207185425802,
+    "false_positive_rate": 0.851,
+    "false_negative_rate": 0.0,
+    "true_negatives": 298,
+    "false_positives": 1702,
+    "false_negatives": 0,
+    "true_positives": 2000
+}

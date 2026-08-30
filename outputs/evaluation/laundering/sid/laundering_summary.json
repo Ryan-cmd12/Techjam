@@ -1,0 +1,14 @@
+{
+    "clean_auroc": 0.9997893809763462,
+    "mean_laundered_auroc": 0.9994819721043928,
+    "mean_laundering_retention": 0.9996925263682506,
+    "mean_laundering_retention_pct": 99.96925263682506,
+    "worst_pipeline": "Extreme Repost",
+    "worst_auroc": 0.9991449421238048,
+    "worst_accuracy_pipeline": "Noise + JPEG",
+    "worst_accuracy": 0.9694005517933283,
+    "clean_semantic_weight": 0.6033284283234477,
+    "clean_forensic_weight": 0.39667157146648935,
+    "mean_laundered_semantic_weight": 0.6876766311568777,
+    "mean_laundered_forensic_weight": 0.31232336904100894
+}

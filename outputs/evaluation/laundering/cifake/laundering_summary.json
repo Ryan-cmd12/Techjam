@@ -1,0 +1,14 @@
+{
+    "clean_auroc": 0.99699433,
+    "mean_laundered_auroc": 0.9362163392857143,
+    "mean_laundering_retention": 0.9390387799755233,
+    "mean_laundering_retention_pct": 93.90387799755233,
+    "worst_pipeline": "Extreme Repost",
+    "worst_auroc": 0.829109585,
+    "worst_accuracy_pipeline": "Extreme Repost",
+    "worst_accuracy": 0.7133,
+    "clean_semantic_weight": 0.582043428401649,
+    "clean_forensic_weight": 0.4179565717055959,
+    "mean_laundered_semantic_weight": 0.6555703880840114,
+    "mean_laundered_forensic_weight": 0.3444296118439432
+}

@@ -1,0 +1,16 @@
+{
+    "loss": 0.09266184384649968,
+    "accuracy": 0.9745,
+    "balanced_accuracy": 0.9744999999999999,
+    "precision": 0.9808471828131333,
+    "recall": 0.9679,
+    "f1": 0.974330581840145,
+    "auroc": 0.9969143899999999,
+    "average_precision": 0.9970459017444276,
+    "false_positive_rate": 0.0189,
+    "false_negative_rate": 0.0321,
+    "true_negatives": 9811,
+    "false_positives": 189,
+    "false_negatives": 321,
+    "true_positives": 9679
+}

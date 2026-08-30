@@ -29,7 +29,7 @@ checkpoints/
 *.ckpt
 
 # Generated outputs
-outputs/
+
 
 # Hugging Face
 .cache/

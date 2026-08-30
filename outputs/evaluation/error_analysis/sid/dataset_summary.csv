@@ -1,0 +1,2 @@
+dataset,count,accuracy,auroc,mean_confidence,mean_reliability,mean_branch_disagreement
+sid_set,2000,0.994,0.999738,0.9903973719509961,0.9642725480692775,0.17890550859910087

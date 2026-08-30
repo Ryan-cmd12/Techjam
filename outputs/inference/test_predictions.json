@@ -1,0 +1,10 @@
+[
+  {
+    "image_path": "samples/inference_test/fake.png",
+    "pred": 0.9958001971244812
+  },
+  {
+    "image_path": "samples/inference_test/real.png",
+    "pred": 0.036530133336782455
+  }
+]

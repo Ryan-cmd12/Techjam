@@ -1,0 +1,15 @@
+{
+    "clean_auroc": 0.9997893809763463,
+    "clean_accuracy": 0.9939804364183596,
+    "clean_f1": 0.9939485627836612,
+    "mean_corrupted_auroc": 0.9995220271047521,
+    "mean_corrupted_accuracy": 0.9891074563760794,
+    "mean_corrupted_f1": 0.9889438321899195,
+    "mean_auroc_retention": 0.9997325898067322,
+    "mean_auroc_retention_pct": 99.97325898067324,
+    "worst_auroc": 0.9986197785606442,
+    "worst_auroc_condition": "Noise \u03c3=0.10",
+    "worst_accuracy": 0.9729119638826185,
+    "worst_accuracy_condition": "Noise \u03c3=0.10",
+    "robustness_gap_auroc": 0.0002673538715941559
+}

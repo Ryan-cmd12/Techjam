@@ -1,0 +1,2 @@
+generator,count,accuracy,auroc,mean_confidence,mean_reliability,mean_branch_disagreement
+unknown,2000,0.9795,0.998638,0.9806565382879344,0.8549053332225083,0.15670475904376938
