@@ -476,3 +476,56 @@ error_analysis:
     columns: 4
     cell_width: 300
     cell_height: 330
+
+
+wildfake:
+
+  root: "data/raw/wildfake"
+
+  benchmark_root:
+    "data/benchmark/hackathon_wildfake"
+
+  seed: 42
+
+  # ----------------------------------------------------
+  # First zero-shot benchmark
+  # ----------------------------------------------------
+
+  test:
+    max_real: 5000
+    max_fake: 5000
+
+    # Prevent one huge generator from dominating.
+    max_per_generator: 1000
+
+  # We'll use this in Step 15B later.
+  train:
+    max_real: 20000
+    max_fake: 20000
+    max_per_generator: 3000
+
+  evaluation:
+
+    conditions:
+
+      - key: "clean"
+        name: "Clean"
+        type: "clean"
+        severity: null
+
+      - key: "jpeg_30"
+        name: "JPEG 30"
+        type: "jpeg"
+        severity: 30
+
+      - key: "resize_025"
+        name: "Resize ×0.25"
+        type: "resize"
+        severity: 0.25
+
+      - key: "blur_2"
+        name: "Blur σ=2"
+        type: "blur"
+        severity: 2.0
+
+  min_generator_samples: 25
