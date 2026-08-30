@@ -23,7 +23,7 @@ A research-oriented binary image classifier for distinguishing real images from 
 - [Reproducing the Reported Baseline Result](#reproducing-the-reported-baseline-result)
 - [Reproducing the Full Robustness Pipeline](#reproducing-the-full-robustness-pipeline)
   - [Training](#training)
-  - [Evaluation](#evaluation-1)
+  - [Evaluation](#evaluation)
   - [Inference](#inference)
 - [Limitations and Future Improvements](#limitations-and-future-improvements)
   - [Dataset Scale and Runtime](#dataset-scale-and-runtime)
