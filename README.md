@@ -161,11 +161,7 @@ python -m pip install -r requirements.txt
 
 On macOS or Linux, activate the environment with `source .venv/bin/activate` instead.
 
-For the optional WildFake selective downloader, install its ModelScope client separately:
-
-```powershell
-python -m pip install --upgrade modelscope modelscope-hub
-```
+The ModelScope Hub client required by the optional WildFake selective downloader is included in `requirements.txt`.
 
 If a specific CUDA build of PyTorch is required, install the appropriate build using the [official PyTorch selector](https://pytorch.org/get-started/locally/) before installing the remaining requirements.
 
