@@ -90,13 +90,11 @@ EMPTY_METADATA_VALUES = {
 }
 
 # Small-download defaults for this project.  These choices intentionally
-# restrict the run to four repository ZIP files:
-#   Images/Diffusion_based/DDIM.zip
-#   Images/Real/afhq.zip
-#   Images/Real/church.zip
-#   Images/Real/ffhq.zip
-DEFAULT_FAKE_ARCHITECTURES = ["DDIM"]
-DEFAULT_REAL_SOURCES = ["afhq", "church", "ffhq"]
+# restrict the run to two repository ZIP files:
+#   Images/Diffusion_based/DALLE.zip
+#   Images/Real/coco.zip
+DEFAULT_FAKE_ARCHITECTURES = ["DALLE"]
+DEFAULT_REAL_SOURCES = ["coco"]
 
 
 # ============================================================
@@ -182,78 +180,6 @@ def get_case_insensitive(row: dict[str, Any], key: str) -> Any:
 # ============================================================
 # SOURCE PROTECTION
 # ============================================================
-
-
-def source_search_text(record: dict[str, Any]) -> str:
-    values = [
-        record.get("image_path", ""),
-        record.get("annotation_path", ""),
-        record.get("remote_path", ""),
-        record.get("metadata_generator", ""),
-        record.get("metadata_architecture", ""),
-        record.get("metadata_weight", ""),
-        record.get("metadata_category", ""),
-    ]
-
-    return " ".join(
-        clean_metadata_value(value)
-        for value in values
-        if clean_metadata_value(value)
-    )
-
-
-def is_forbidden_benchmark_source(
-    record_or_path: dict[str, Any] | str,
-) -> tuple[bool, str | None]:
-    """
-    Hard source-level exclusion before any image/archive extraction.
-
-    Excludes:
-      1. COCO val2017
-      2. DALL-E Advanced
-    """
-
-    if isinstance(record_or_path, dict):
-        text = source_search_text(record_or_path)
-        is_advanced_metadata = record_or_path.get("metadata_is_advanced") is True
-    else:
-        text = str(record_or_path)
-        is_advanced_metadata = False
-
-    normalized = normalize_path(text).lower()
-    tokens = tokenize(normalized)
-
-    # COCO val2017
-    coco_val2017 = (
-        "coco" in tokens
-        and (
-            "val2017" in normalized
-            or ("val" in tokens and "2017" in tokens)
-        )
-    )
-
-    if coco_val2017:
-        return True, "COCO val2017"
-
-    # DALL-E Advanced
-    dalle_present = (
-        "dalle" in tokens
-        or ("dall" in tokens and "e" in tokens)
-        or "dall-e" in normalized
-        or "dall_e" in normalized
-        or "dalle" in normalized
-    )
-
-    advanced_present = (
-        "advanced" in tokens
-        or "advanced" in normalized
-        or is_advanced_metadata
-    )
-
-    if dalle_present and advanced_present:
-        return True, "DALL-E Advanced"
-
-    return False, None
 
 
 # ============================================================
@@ -673,9 +599,8 @@ def parse_wildfake_record(record: dict[str, Any]) -> dict[str, Any]:
 
 def build_candidates(
     annotation_records: list[dict[str, Any]],
-) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+) -> list[dict[str, Any]]:
     candidates: list[dict[str, Any]] = []
-    excluded: list[dict[str, Any]] = []
     seen_paths: set[str] = set()
 
     for record in annotation_records:
@@ -696,26 +621,9 @@ def build_candidates(
         hierarchy = parse_wildfake_record(working)
         working.update(hierarchy)
 
-        forbidden, reason = is_forbidden_benchmark_source(working)
-
-        if forbidden:
-            excluded.append(
-                {
-                    "path": remote_path,
-                    "reason": reason,
-                    "metadata": {
-                        "generator": working.get("metadata_generator", ""),
-                        "architecture": working.get("metadata_architecture", ""),
-                        "weight": working.get("metadata_weight", ""),
-                        "category": working.get("metadata_category", ""),
-                    },
-                }
-            )
-            continue
-
         candidates.append(working)
 
-    return candidates, excluded
+    return candidates
 
 
 # ============================================================
@@ -1496,17 +1404,6 @@ def download_selection(
 
     # Reuse already-extracted images first.
     for item in selection:
-        forbidden, reason = is_forbidden_benchmark_source(item)
-
-        if forbidden:
-            results_by_path[item["annotation_path"]] = {
-                **item,
-                "status": "excluded",
-                "reason": reason,
-            }
-            progress.update(1)
-            continue
-
         existing = validate_existing_image(
             item=item,
             output_root=output_root,
@@ -1582,7 +1479,6 @@ def download_selection(
 def print_selection_summary(
     candidates: list[dict[str, Any]],
     selection: list[dict[str, Any]],
-    excluded: list[dict[str, Any]],
 ) -> None:
     real_available = sum(candidate["label"] == 0 for candidate in candidates)
     fake_available = sum(candidate["label"] == 1 for candidate in candidates)
@@ -1610,18 +1506,6 @@ def print_selection_summary(
     print(f"\nSelected real: {selected_real:,}")
     print(f"Selected fake: {selected_fake:,}")
     print(f"Total selected: {len(selection):,}")
-
-    print("\nForbidden benchmark paths removed BEFORE download:")
-    print(f"{len(excluded):,}")
-
-    if excluded:
-        reason_counts: dict[str, int] = defaultdict(int)
-
-        for item in excluded:
-            reason_counts[item["reason"]] += 1
-
-        for reason, count in sorted(reason_counts.items()):
-            print(f"  {reason}: {count:,}")
 
     print("\nFake families:")
     for family, count in sorted(families.items()):
@@ -1674,14 +1558,23 @@ def main() -> None:
         "--real",
         type=int,
         default=5000,
-        help="Number of real test images to select.",
+        help="Number of real test images to select. Ignored when --all is set.",
     )
 
     parser.add_argument(
         "--fake",
         type=int,
         default=5000,
-        help="Number of fake test images to select.",
+        help="Number of fake test images to select. Ignored when --all is set.",
+    )
+
+    parser.add_argument(
+        "--all",
+        action="store_true",
+        help=(
+            "Select ALL eligible images from the specified sources/architectures. "
+            "When set, --real and --fake counts are ignored."
+        ),
     )
 
     parser.add_argument(
@@ -1700,9 +1593,9 @@ def main() -> None:
         nargs="+",
         default=DEFAULT_FAKE_ARCHITECTURES,
         help=(
-            "Fake architectures to allow. Default: DDIM only. "
-            "Using DDIM only means the fake side requires exactly "
-            "Images/Diffusion_based/DDIM.zip."
+            "Fake architectures to allow. Default: DALLE only. "
+            "Using DALLE only means the fake side requires exactly "
+            "Images/Diffusion_based/DALLE.zip."
         ),
     )
 
@@ -1711,7 +1604,7 @@ def main() -> None:
         nargs="+",
         default=DEFAULT_REAL_SOURCES,
         help=(
-            "Real WildFake sources to allow. Default: afhq church ffhq. "
+            "Real WildFake sources to allow. Default: coco. "
             "The real sample is balanced across these sources."
         ),
     )
@@ -1760,6 +1653,12 @@ def main() -> None:
 
     args = parser.parse_args()
 
+    if args.all:
+        # Use arbitrarily large counts; the sampling functions cap at the
+        # available pool, and we skip the post-selection validation.
+        args.real = 10_000_000
+        args.fake = 10_000_000
+
     if args.real < 0 or args.fake < 0:
         raise ValueError("--real and --fake must be >= 0")
 
@@ -1781,10 +1680,6 @@ def main() -> None:
     print("========================================")
 
     print(f"\nDataset:\n{DATASET_ID}")
-
-    print("\nHARD EXCLUSIONS:")
-    print("  COCO val2017")
-    print("  DALL-E Advanced")
 
     print("\nSOURCE RESTRICTION:")
     print("  Fake architectures: " + ", ".join(args.fake_architectures))
@@ -1810,7 +1705,7 @@ def main() -> None:
     # Filter before any image archive download
     # --------------------------------------------------------
 
-    candidates, excluded = build_candidates(annotation_records)
+    candidates = build_candidates(annotation_records)
 
     # --------------------------------------------------------
     # Restricted selection
@@ -1828,24 +1723,26 @@ def main() -> None:
     selected_real = sum(item["label"] == 0 for item in selection)
     selected_fake = sum(item["label"] == 1 for item in selection)
 
-    if selected_real < args.real:
-        raise RuntimeError(
-            f"Only {selected_real:,} eligible real images were found in "
-            f"the requested real sources {args.real_sources}; requested "
-            f"{args.real:,}."
-        )
+    if not args.all:
+        if selected_real < args.real:
+            raise RuntimeError(
+                f"Only {selected_real:,} eligible real images were found in "
+                f"the requested real sources {args.real_sources}; requested "
+                f"{args.real:,}."
+            )
 
-    if selected_fake < args.fake:
-        raise RuntimeError(
-            f"Only {selected_fake:,} eligible fake images were found in "
-            f"the requested fake architectures {args.fake_architectures}; "
-            f"requested {args.fake:,}."
-        )
+        if selected_fake < args.fake:
+            raise RuntimeError(
+                f"Only {selected_fake:,} eligible fake images were found in "
+                f"the requested fake architectures {args.fake_architectures}; "
+                f"requested {args.fake:,}."
+            )
+    else:
+        print(f"\n--all mode: using all eligible images ({selected_real:,} real, {selected_fake:,} fake)")
 
     print_selection_summary(
         candidates=candidates,
         selection=selection,
-        excluded=excluded,
     )
 
     print_archive_plan(selection)
@@ -1857,14 +1754,8 @@ def main() -> None:
     selection_path = output_root / "selected_test_subset.jsonl"
     save_jsonl(selection_path, selection)
 
-    excluded_path = output_root / "excluded_benchmark_sources.jsonl"
-    save_jsonl(excluded_path, excluded)
-
     print("\nSelection saved:")
     print(selection_path)
-
-    print("\nExcluded source list:")
-    print(excluded_path)
 
     if args.dry_run:
         print("\nDRY RUN — no image archives downloaded.")
@@ -1880,7 +1771,6 @@ def main() -> None:
         print(f"\nExact benchmark protection: {len(benchmark_hashes):,} hashes")
     else:
         print("\nNo local benchmark hashes found.")
-        print("Source-level benchmark protection is still active.")
 
     # --------------------------------------------------------
     # Archive-aware download
