@@ -282,14 +282,12 @@ python scripts/build_unified_manifest.py
 
 The default SID download materializes **8,000 training** and **2,000 validation** images per class while preserving original encoded bytes.
 
-**WildFake** — the downloader selects 5,000 real and 5,000 DDIM images from the official test annotation and extracts only those images from four source archives:
+**WildFake** — the downloader downloads the full dataset DALL·E Advanced and COCO val2017 from WildFake to use for evaluating purposes:
 
 ```powershell
-python scripts/download_wildfake_subset.py
-python scripts/build_wildfake_manifest.py --split test --max-real 500 --max-fake 500 --max-per-generator 500
+python scripts/download_wildfake_subset.py --real-sources coco --fake-architectures DALLE --all
+python scripts/build_wildfake_manifest.py --split test --full --output data/manifests/wildfake_test.csv
 ```
-
-The second command reproduces the balanced 1,000-image evaluation manifest: 500 DDIM images and 500 real images sampled from AFHQ, LSUN Church, and FFHQ. Use `--dry-run` on the downloader to inspect the selection and archive plan before transferring large files.
 
 > Raw data is intentionally excluded from Git. Anyone reproducing the project must obtain the datasets under their respective licenses and terms.
 
