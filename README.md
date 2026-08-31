@@ -15,6 +15,7 @@ A research-oriented binary image classifier for distinguishing real images from 
 - [Evaluation Results](#evaluation-results)
   - [Clean CIFAKE Test Set](#clean-cifake-test-set)
   - [Corruption Stress Test](#corruption-stress-test)
+  - [Wildfake Evaluation](#wildfake-evaluation)
 - [Setup and Installation](#setup-and-installation)
   - [Prerequisites](#prerequisites)
   - [Create an Environment](#create-an-environment)
@@ -191,6 +192,47 @@ Across the three corrupted conditions:
 
 Resizing to 25% was the worst condition. These results motivate the paired-corruption training, native-tile forensic branch, and transformation-aware reliability gate used in the later stages.
 
+### Wildfake Evaluation
+(Coco and Dalle) 
+| Metric | Result |
+|---|---:|
+| Accuracy | 63.12% |
+| Balanced accuracy | 40.91% |
+| Precision | 5.57% |
+| Recall (fake detection) | 7.60% |
+| F1 score | 6.43% |
+| AUROC | 31.65% |
+| Average precision | 11.38% |
+| Real specificity | 74.22% |
+| False-positive rate | 25.78% |
+| False-negative rate | 92.40% |
+
+The corresponding confusion matrix:
+
+| | Predicted Real | Predicted Fake |
+|---|---:|---:|
+| **Actual Real** | 3,711 (TN) | 1,289 (FP) |
+| **Actual Fake** | 924 (FN) | 76 (TP) |
+
+#### Corruption conditions
+
+| Condition | Accuracy | Balanced Acc. | F1 | AUROC | Avg. Precision | Real Spec. | Fake Recall |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| Clean | 63.12% | 40.91% | 6.43% | 31.65% | 11.38% | 74.22% | 7.60% |
+| JPEG quality 30 | 56.03% | 39.02% | 9.28% | 31.06% | 11.29% | 64.54% | 13.50% |
+| Resize to 25% | 30.25% | 25.03% | 7.60% | 12.64% | 9.32% | 32.86% | 17.20% |
+| Blur σ = 2 | 40.72% | 26.03% | 2.20% | 11.34% | 9.33% | 48.06% | 4.00% |
+
+#### Branch-level diagnostics
+
+The per-branch AUROCs reveal that the two branches respond very differently to the domain shift. The forensic branch in particular exhibits strong discriminative capacity — just with reversed polarity — suggesting it has learned meaningful features whose sign flips on internet-sourced COCO images.
+
+| Condition | Semantic | Forensic | Inv. Forensic | Base Fusion | Final (gated) |
+|---|---:|---:|---:|---:|---:|
+| Clean | 0.366 | 0.028 | **0.972** | 0.278 | 0.350 |
+| JPEG quality 30 | 0.658 | 0.100 | **0.900** | 0.572 | 0.608 |
+| Resize to 25% | 0.730 | 0.078 | **0.922** | 0.564 | 0.621 |
+| Blur σ = 2 | 0.583 | 0.066 | **0.934** | 0.447 | 0.489 |
 ---
 
 ## Setup and Installation
