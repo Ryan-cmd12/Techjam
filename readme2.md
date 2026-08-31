@@ -352,6 +352,7 @@ python scripts/infer.py `
   --output outputs/inference/predictions.json `
   --diagnostics-output outputs/inference/diagnostics.json
 ```
+Prediction results and diagnostics results are then saved under `outputs/inference/test_predictions.json` and `outputs/inference/test_diagnostics.json` respectively.
 
 ---
 
