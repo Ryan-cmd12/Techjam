@@ -362,25 +362,21 @@ Prediction results and diagnostics results are then saved under `outputs/inferen
 
 Dataset size was the dominant constraint. The portable workspace retained for review contains approximately:
 
-| Dataset | Images | Storage |
-|---|---:|---:|
-| CIFAKE (all) | 120,000 | ~0.10 GiB |
-| SID validation subset | 4,000 | ~2.70 GiB |
-| WildFake (downloaded) | 10,000 + metadata | ~0.58 GiB |
+| Dataset | Images used |
+|---|---:|
+| CIFAKE (all) | 120,000 |
+| SID validation subset | 4,000 |
+| WildFake (downloaded) | 10,000 + metadata |
 
-These storage figures describe only the files currently available in the review copy; training was completed using the intended dataset volumes before the larger data files were omitted from the repository.
+WildFake is the main scaling challenge: it has about 3.57 million images, roughly 30 times the number of CIFAKE images used here. Due to storage and time constraints, the selective downloader therefore restricts fake data to DDIM and real data to three sources for testing. Due to how big the dataset is, training was not feasible given the limited time.
 
-WildFake is the main scaling challenge: its paper reports **3.57 million images**, roughly 30 times the number of CIFAKE images used here. The selective downloader therefore restricts fake data to DDIM and real data to three sources. Although only 10,000 images are retained locally and 1,000 are placed in the evaluation manifest, the downloader must still transfer the four complete ZIP archives containing those selected images.
-
-> **Download time rule of thumb:** each 100 GB takes about 2.2 hours at a sustained 100 Mbps, and each 1 TB takes about 22 hours, before extraction, validation, or retries.
-
-No hardware-normalized timing log is included in the portable repository, so we do not claim a fixed number of training hours. The baseline alone processes 90,000 images for 10 epochs — approximately 28,130 optimizer steps at batch size 32. A single 10-epoch pass over all 3.57 million WildFake images would expose the model to about 40 times more images per epoch than the baseline. The complete detector is more expensive again because it uses paired clean/corrupted views, multiple native-resolution tiles, a forensic encoder, and five sequential learned stages totaling 46 configured epochs. Full-scale retraining would require substantially more storage, data-loader throughput, GPU memory, and likely multi-GPU distributed training.
+The baseline alone processes 90,000 images for 10 epochs — approximately 28,130 optimizer steps at batch size 32. A single 10-epoch pass over all 3.57 million WildFake images would expose the model to about 40 times more images per epoch than the baseline. The complete detector is more expensive again because it uses paired clean/corrupted views, multiple native-resolution tiles, a forensic encoder, and five sequential learned stages totaling 46 configured epochs. Full-scale retraining would require substantially more storage, data-loader throughput, GPU memory, and likely multi-GPU distributed training.
 
 ### Data and Evaluation Coverage
 
 - **Narrow training domain:** CIFAKE images are only 32 × 32 and its fake class comes from Stable Diffusion 1.4. High clean accuracy may reflect dataset or generator specific cues rather than universal synthetic-image evidence.
 - **Known duplicate leakage:** the manifest audit found 378 exact content hashes appearing in both CIFAKE's original training and test folders (756 rows in the report). They are reported in `data/manifests/cifake_cross_split_duplicates.csv` so the clean metric may be mildly optimistic.
-- **Small OOD subsets:** SID evaluation uses 4,000 images, while the WildFake manifest uses only 1,000 images and one fake architecture (DDIM). This is useful for hackathon-scale testing but does not represent WildFake's full hierarchy or generator diversity.
+- **Small OOD subsets:** SID evaluation uses 4,000 images, while the WildFake manifest uses only 1,000 images and one fake generator (DDIM). This is due to storage constraints as extracting a set number of images from every fake generator would still require downloading the full size file.
 - **Synthetic corruptions:** JPEG, blur, resize, noise, colour, and crop pipelines approximate common reposting behaviour but cannot capture every social-media codec, screenshot workflow, watermark, filter, or adversarial manipulation.
 - **Binary scope:** tampered/partially edited images are excluded, and the system predicts authenticity rather than identifying the responsible generator or providing provenance.
 - **Calibration drift:** a threshold and temperature fitted on one distribution may be unreliable for new generators, cameras, platforms, or compression pipelines. The output should be treated as decision support, not proof of authenticity.
@@ -391,10 +387,11 @@ The next priorities would be to:
 
 1. **Remove all hash overlap** before splitting
 2. **Benchmark the complete pipeline** on fixed hardware with download, preprocessing, training, and inference timings
-3. **Expand WildFake coverage** across GAN, diffusion, and other generator families
-4. **Report confidence intervals** and per-source metrics on larger held-out sets
-5. **Scale the input pipeline** with sharded/streaming storage, cached CLIP embeddings where valid, distributed mixed-precision training, and resumable dataset downloads
-6. **Add real social-media laundering data**, newer generators, tampered images, ablation studies for each branch, and continuous calibration monitoring under domain shift
+3. **Conduct further training with WildFake dataset** further fine-tune the models on a greater spread of data 
+4. **Expand WildFake coverage** across GAN, diffusion, and other generator families
+5. **Report confidence intervals** and per-source metrics on larger held-out sets
+6. **Scale the input pipeline** with sharded/streaming storage, cached CLIP embeddings where valid, distributed mixed-precision training, and resumable dataset downloads
+7. **Add real social-media laundering data**, newer generators, tampered images, ablation studies for each branch, and continuous calibration monitoring under domain shift
 
 ---
 
